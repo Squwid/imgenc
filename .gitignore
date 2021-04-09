@@ -4,3 +4,4 @@ vendor/
 go.sum
 imgenc
 tests/
+output.txt
