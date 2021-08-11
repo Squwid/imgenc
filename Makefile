@@ -37,6 +37,9 @@ mod:
 clean:
 	rm -rf bin/
 
+install: mod
+	go install
+
 build: clean mod compile
 
 .PHONY: clean compile mod build

@@ -38,3 +38,10 @@ func ParsePath(fullPath string) (path string, file string) {
 	path = strings.Join(ss, "/")
 	return
 }
+
+// ParseExtention returns the path extension of the image. Returns the following:
+//   png, jpeg, jpg, heic, psd
+func ParseExtention(path string) string {
+	var ext string = ""
+	return ext
+}

@@ -21,11 +21,12 @@ func main() {
 	app.Flag("debug", "Run in debug mode").Short('v').BoolVar(&debugMode)
 
 	flagsBasic := new(models.BasicFlags)
-	app.Flag("image", "Image file to edit").Required().Short('i').StringVar(&flagsBasic.InputFile)
+	app.Flag("input", "Input file to transform (usually an image file)").Required().Short('i').StringVar(&flagsBasic.InputFile)
 	app.Flag("output", "Output file to save the image. If left blank, output will print to stdout").Short('o').StringVar(&flagsBasic.OutputFile)
 
 	// "b64e" Command (Base 64 Encode)
-	cmdB64 := app.Command("b64e", "Base 64 encode an image")
+	cmdB64e := app.Command("b64e", "Base64 encode an image")
+	cmdB64d := app.Command("b64d", "Base64 decode an image")
 	flagsB64 := new(models.B64CmdFlags)
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
@@ -35,7 +36,9 @@ func main() {
 	}
 
 	switch command {
-	case cmdB64.FullCommand():
+	case cmdB64e.FullCommand():
 		b64.EncodeCmd(flagsBasic, flagsB64)
+	case cmdB64d.FullCommand():
+		b64.DecodeCmd(flagsBasic, flagsB64)
 	}
 }
