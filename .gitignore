@@ -1,7 +1,6 @@
 vendor/
 .vscode/
 .DS_STORE
-go.sum
 imgenc
 tests/
 output.txt

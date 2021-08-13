@@ -1,14 +1,13 @@
 package b64
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
-	"image/jpeg"
 	"io"
 	"os"
 
 	"github.com/Squwid/imgenc/pkg/models"
+	"github.com/Squwid/imgenc/pkg/parser"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,7 +32,7 @@ func EncodeCmd(basicFlags *models.BasicFlags, b64Flags *models.B64CmdFlags) {
 		// No output file, print to stdout
 		fmt.Println(encoded)
 	} else {
-		path, _ := models.ParsePath(basicFlags.OutputFile)
+		path, _ := parser.ParsePath(basicFlags.OutputFile)
 
 		// Ensure path exists, if not create
 		if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -83,12 +82,12 @@ func DecodeCmd(basicFlags *models.BasicFlags, b64Flags *models.B64CmdFlags) {
 		logger.WithError(err).Fatalf("Error decoding")
 	}
 
-	path, _ := models.ParsePath(basicFlags.OutputFile)
+	path, _ := parser.ParsePath(basicFlags.OutputFile)
 
-	img, err := jpeg.Decode(bytes.NewReader(decoded))
-	if err != nil {
-		logger.WithError(err).Fatalf("Could not decode string to jpeg")
-	}
+	// img, err := jpeg.Decode(bytes.NewReader(decoded))
+	// if err != nil {
+	// 	logger.WithError(err).Fatalf("Could not decode string to jpeg")
+	// }
 
 	// Ensure path exists, if not create
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -104,13 +103,13 @@ func DecodeCmd(basicFlags *models.BasicFlags, b64Flags *models.B64CmdFlags) {
 	}
 	defer outFile.Close()
 
-	// n, err := outFile.Write(decoded)
-	// if err != nil {
-	// 	logger.WithError(err).Fatalf("Error writing to file")
-	// }
-
-	if err := jpeg.Encode(outFile, img, nil); err != nil {
-		logger.WithError(err).Fatalf("Error encoding jpeg image")
+	n, err := outFile.Write(decoded)
+	if err != nil {
+		logger.WithError(err).Fatalf("Error writing to file")
 	}
-	// logger.Infof("Wrote %v to file", models.DisplayByte(n))
+
+	// if err := jpeg.Encode(outFile, img, nil); err != nil {
+	// 	logger.WithError(err).Fatalf("Error encoding jpeg image")
+	// }
+	logger.Infof("Wrote %v to file", models.DisplayByte(n))
 }
