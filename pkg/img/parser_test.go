@@ -1,0 +1,121 @@
+package img
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"testing"
+
+	"github.com/Squwid/imgenc/pkg/printer"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestParser(t *testing.T) {
+	tests := map[string]struct {
+		filePath        string
+		scans           int // number of lines to scan, -1 means all
+		expectedOutputs []string
+	}{
+		"simple_test": {
+			filePath: "../../tests/devito-smaller.jpg",
+			scans:    3,
+			expectedOutputs: []string{
+				"0xff 0xd8",
+				"0xff 0xdb 0x00 0x84 0x00 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x02 0x02 0x02 0x02 0x02 0x02 0x02 0x02 0x02 0x02 0x02 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x01 0x01 0x01 0x01 0x01 0x01 0x01 0x02 0x01 0x01 0x02 0x02 0x02 0x01 0x02 0x02 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03 0x03",
+				"0xff 0xdd 0x00 0x04 0x00 0x7d",
+			},
+		},
+	}
+
+	for testName, test := range tests {
+		file, err := os.Open(test.filePath)
+		if err != nil {
+			t.Logf("[%v] failed opening file %v\n", testName, err)
+			t.Fail()
+		}
+		defer file.Close()
+
+		s := bufio.NewScanner(file)
+
+		fStats, err := file.Stat()
+		if err != nil {
+			t.Logf("error getting file stats: %v\n", err)
+			t.Fail()
+		}
+
+		buffer := []byte{}
+		s.Buffer(buffer, int(fStats.Size()))
+
+		parser := NewParser()
+		s.Split(parser.Split)
+
+		var i = 0
+		for s.Scan() {
+			bs := s.Bytes()
+			assert.Equal(t, test.expectedOutputs[i], printer.SprintBytes(bs))
+
+			i++
+			if i == test.scans {
+				break
+			}
+		}
+	}
+}
+
+func TestParseEOF(t *testing.T) {
+	file, err := os.Open("../../tests/devito-smaller.jpg")
+	if err != nil {
+		t.Logf("failed opening file %v\n", err)
+		t.Fail()
+	}
+	defer file.Close()
+
+	s := bufio.NewScanner(file)
+
+	fStats, err := file.Stat()
+	if err != nil {
+		t.Logf("error getting file stats: %v\n", err)
+		t.Fail()
+	}
+
+	buffer := []byte{}
+	s.Buffer(buffer, int(fStats.Size()))
+
+	parser := NewParser()
+	s.Split(parser.Split)
+
+	var i = 0
+	var lineCheck = 14
+
+	var outs = [][]byte{}
+	for s.Scan() {
+		i++
+		if i == lineCheck {
+			_ = i // add breakpoint here
+		}
+		bs := s.Bytes()
+
+		printer.PrintBytes(bs)
+		fmt.Println("")
+
+		outs = append(outs, bs)
+	}
+
+	// Get line that has an error
+
+	fmt.Println("HERE!!")
+	for i, out := range outs {
+		if out[0] != MarkerIdentifier {
+			fmt.Println("LINE", i+1)
+		}
+	}
+
+	// Print end of image
+	/*
+		fmt.Println(len(outs))
+		for _, out := range outs[len(outs)-3:] {
+			printer.PrintBytes(out)
+			fmt.Println("")
+		}
+	*/
+}
