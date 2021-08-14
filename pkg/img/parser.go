@@ -21,24 +21,32 @@ func (p *Parser) Reset() {
 	p.advance = 0
 }
 
+func (p *Parser) Values() (int, []byte) {
+	return p.advance, p.buf.Bytes()
+}
+
 func (p *Parser) Split(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	for i, b := range data {
+	if p.advance != 0 {
+		data = data[p.advance:]
+	}
+	// printer.PrintBytes(data)
+	for _, b := range data {
 		if b == MarkerIdentifier {
-			if i != 0 {
-				token = p.buf.Bytes()
-				advance = len(token)
+			if p.advance != 0 {
+				advance, token = p.Values()
 				p.Reset()
-				// fmt.Println("Advance", advance)
-				// fmt.Println("atEOF", atEOF)
-				// fmt.Printf("0x%02x - 0x%02x\n", b, MarkerIdentifier)
-				// printer.PrintBytes(token)
-				// fmt.Println()
 				return
 			}
 		}
 
 		p.advance++
 		p.buf.WriteByte(b)
+	}
+
+	if atEOF && p.advance != 0 {
+		advance, token = p.Values()
+		p.Reset()
+		return
 	}
 
 	return 0, nil, nil

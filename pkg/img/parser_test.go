@@ -3,6 +3,7 @@ package img
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"testing"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParser(t *testing.T) {
+func TestInitialParser(t *testing.T) {
 	tests := map[string]struct {
 		filePath        string
 		scans           int // number of lines to scan, -1 means all
@@ -84,38 +85,63 @@ func TestParseEOF(t *testing.T) {
 	parser := NewParser()
 	s.Split(parser.Split)
 
-	var i = 0
-	var lineCheck = 14
-
-	var outs = [][]byte{}
 	for s.Scan() {
-		i++
-		if i == lineCheck {
-			_ = i // add breakpoint here
-		}
 		bs := s.Bytes()
-
+		if bs[0] != MarkerIdentifier {
+			panic("NOT MATCHING")
+		}
 		printer.PrintBytes(bs)
-		fmt.Println("")
+		fmt.Println()
+	}
+}
 
-		outs = append(outs, bs)
+func TestScannerParser(t *testing.T) {
+	tests := map[string]struct {
+		file string
+	}{
+		"devito": {
+			file: "../../tests/devito-smaller.jpg",
+		},
+		"truck": {
+			file: "../../tests/dumptruck.jpg",
+		},
 	}
 
-	// Get line that has an error
+	for _, test := range tests {
+		// OG File Things
+		ogFile, err := os.Open(test.file)
+		assert.Equal(t, nil, err)
+		defer ogFile.Close()
+		ogBS, err := io.ReadAll(ogFile)
+		assert.Equal(t, nil, err)
 
-	fmt.Println("HERE!!")
-	for i, out := range outs {
-		if out[0] != MarkerIdentifier {
-			fmt.Println("LINE", i+1)
+		// File from scanner
+		file, err := os.Open(test.file)
+		assert.Equal(t, nil, err)
+		defer file.Close()
+		s := bufio.NewScanner(file)
+		fStats, err := file.Stat()
+		assert.Equal(t, nil, err)
+
+		buffer := []byte{}
+		s.Buffer(buffer, int(fStats.Size()))
+
+		parser := NewParser()
+		s.Split(parser.Split)
+
+		var out = []byte{}
+		for s.Scan() {
+			bs := s.Bytes()
+			out = append(out, bs...)
+		}
+
+		// Make sure all the bytes are the same between file and parser
+		assert.Equal(t, len(ogBS), len(out))
+
+		if len(ogBS) == len(out) {
+			for i := 0; i < len(ogBS); i++ {
+				assert.Equal(t, ogBS[i], out[i])
+			}
 		}
 	}
-
-	// Print end of image
-	/*
-		fmt.Println(len(outs))
-		for _, out := range outs[len(outs)-3:] {
-			printer.PrintBytes(out)
-			fmt.Println("")
-		}
-	*/
 }
