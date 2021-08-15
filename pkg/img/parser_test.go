@@ -63,21 +63,15 @@ func TestInitialParser(t *testing.T) {
 	}
 }
 
-func TestParseEOF(t *testing.T) {
+func TestWorking(t *testing.T) {
 	file, err := os.Open("../../tests/devito-smaller.jpg")
-	if err != nil {
-		t.Logf("failed opening file %v\n", err)
-		t.Fail()
-	}
+	assert.Equal(t, nil, err)
 	defer file.Close()
 
 	s := bufio.NewScanner(file)
 
 	fStats, err := file.Stat()
-	if err != nil {
-		t.Logf("error getting file stats: %v\n", err)
-		t.Fail()
-	}
+	assert.Equal(t, nil, err)
 
 	buffer := []byte{}
 	s.Buffer(buffer, int(fStats.Size()))
@@ -85,13 +79,19 @@ func TestParseEOF(t *testing.T) {
 	parser := NewParser()
 	s.Split(parser.Split)
 
+	var markers = map[byte]int{}
 	for s.Scan() {
 		bs := s.Bytes()
-		if bs[0] != MarkerIdentifier {
-			panic("NOT MATCHING")
+
+		if _, ok := markers[bs[1]]; ok {
+			markers[bs[1]]++
+		} else {
+			markers[bs[1]] = 1
 		}
-		printer.PrintBytes(bs)
-		fmt.Println()
+	}
+
+	for k, v := range markers {
+		fmt.Printf("[0x%02x]: %v\n", k, v)
 	}
 }
 

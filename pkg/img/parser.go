@@ -31,7 +31,7 @@ func (p *Parser) Split(data []byte, atEOF bool) (advance int, token []byte, err 
 	}
 	// printer.PrintBytes(data)
 	for _, b := range data {
-		if b == MarkerIdentifier {
+		if b == byte(0xff) {
 			if p.advance != 0 {
 				advance, token = p.Values()
 				p.Reset()
